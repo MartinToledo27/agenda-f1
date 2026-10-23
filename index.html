@@ -16,7 +16,7 @@ header{margin-top:14px;padding:18px 16px;border-radius:14px;background:#111;colo
 h1{margin:0;font:800 32px/1 'Arial Narrow',Arial,sans-serif;letter-spacing:.02em;text-transform:uppercase}
 .sub{color:rgba(255,255,255,.7);font-size:13px;margin-top:4px}
 nav{display:flex;border-bottom:1px solid var(--line);margin-top:12px}
-nav button{flex:1;background:none;border:0;border-bottom:3px solid transparent;color:var(--mute);font:700 16px/1 inherit;padding:12px 4px;cursor:pointer}
+nav button{flex:1;background:none;border:0;border-bottom:3px solid transparent;color:var(--mute);font-weight:700;font-size:14px;font-family:inherit;padding:12px 2px;cursor:pointer}
 nav button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--red)}
 .gp{margin-top:18px}.gp h2{margin:0;font-size:24px;line-height:1.1}.gp .lug{color:var(--mute);font-size:14px;margin:3px 0 10px}
 .cd{background:var(--sf);border:1px solid var(--line);border-left:5px solid var(--red);border-radius:8px;padding:10px 12px;margin-bottom:10px}
@@ -33,12 +33,27 @@ summary{cursor:pointer;padding:11px 0;display:flex;justify-content:space-between
 summary span:last-child{color:var(--mute);font-weight:400;font-size:14px;white-space:nowrap}
 details .s{border:0;padding:6px 0;margin:0;background:none}
 .vacio{padding:28px 8px;text-align:center;color:var(--mute)}
+.ctrl{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.chip{border:1px solid var(--line);background:var(--sf);color:var(--ink);border-radius:999px;padding:7px 12px;font-weight:600;font-size:14px;font-family:inherit;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tb{margin-top:8px}
+.r{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;background:var(--sf);border:1px solid var(--line);border-left:5px solid var(--c,#888);border-radius:8px;padding:8px 12px;margin-bottom:5px}
+details .r{background:none}.r.fv{box-shadow:inset 0 0 0 2px var(--red)}
+.r .p{color:var(--mute);font-weight:700}.r .n{font-weight:600}.r small{display:block;color:var(--mute);font-weight:400;font-size:12px}.r b{font-variant-numeric:tabular-nums}
+.nota{color:var(--mute);font-size:12px;margin-top:8px}
+.fb{display:flex;align-items:center;gap:8px;background:var(--sf);border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin-top:8px;cursor:pointer}
+.fl{flex:none;width:76px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--mute)}
+.fi{flex:1;display:flex;gap:12px;overflow-x:auto;white-space:nowrap}
+.fc{border-left:4px solid var(--c,#888);padding-left:7px;font-weight:600;font-size:14px}
+.fc b{font-weight:400;color:var(--mute);font-size:12px;margin-left:5px}
+.fi em{color:var(--mute);font-size:13px}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header><h1>Agenda F1</h1><div class="sub" id="act">Cargando…</div></header>
-<nav id="tabs"><button data-t="inicio" aria-selected="true">Inicio</button><button data-t="cal" aria-selected="false">Calendario</button></nav>
+<div id="favbar"></div>
+<nav id="tabs"><button data-t="inicio" aria-selected="true">Inicio</button><button data-t="cal" aria-selected="false">Calendario</button><button data-t="pos" aria-selected="false">Posiciones</button><button data-t="fav" aria-selected="false">Favoritos</button></nav>
 <main id="main"></main>
 </div>
 <script>
@@ -50,7 +65,11 @@ const fh=d=>d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',hour12
 const fd=d=>cap(d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'numeric',timeZone:TZ}));
 const fc=d=>d.toLocaleDateString('es-AR',{day:'numeric',month:'short',timeZone:TZ}).replace('.','');
 const dayK=d=>d.toLocaleDateString('en-CA',{timeZone:TZ});
-let D=null,tab='inicio';
+let D=null,tab='inicio',sub='p',F={p:[],e:[]};
+try{F=JSON.parse(localStorage.getItem('f1_favs'))||F}catch(e){}
+const TC={mercedes:'#27F4D2',ferrari:'#E8002D',mclaren:'#FF8000',red_bull:'#3671C6',rb:'#6692FF',alpine:'#FF87BC',haas:'#B6BABD',audi:'#F50537',williams:'#64C4FF',aston_martin:'#229971',cadillac:'#AAAAAD'};
+const tc=id=>TC[id]||'#888',isF=(t,k)=>F[t].includes(k);
+const toggle=(t,k)=>{F[t]=isF(t,k)?F[t].filter(x=>x!==k):[...F[t],k];try{localStorage.setItem('f1_favs',JSON.stringify(F))}catch(e){}};
 const ses=c=>c.sesiones.map(s=>({...s,a:new Date(s.t),b:new Date(+new Date(s.t)+DUR[s.k]*6e4)}));
 const fin=c=>{const s=ses(c);return s[s.length-1].b};
 function sesHtml(c){
@@ -75,21 +94,49 @@ function inicio(){
 function cal(){
   const now=new Date(),nx=D.carreras.find(c=>fin(c)>now);
   return D.carreras.map(c=>{const s=ses(c),pas=fin(c)<=now,prox=nx&&nx.ronda===c.ronda;
-    return`<details class="${pas?'pas':''}${prox?' prox':''}"><summary><span>${c.ronda}. ${c.nombre.replace(' Grand Prix','')}</span><span>${fc(s[s.length-1].a)}</span></summary>${sesHtml(c)}</details>`}).join('');
+    return`<details class="${pas?'pas':''}${prox?' prox':''}"><summary><span>${c.ronda}. ${c.nombre.replace(' Grand Prix','')}</span><span>${fc(s[s.length-1].a)}</span></summary>${pas&&D.resultados&&D.resultados[c.ronda]?resHtml(c):sesHtml(c)}</details>`}).join('');
+}
+const fila=(pos,t,k,n,s2,pts,eq)=>`<div class="r${isF(t,k)?' fv':''}" data-f="${t}:${k}" style="--c:${tc(eq)}"><span class="p">${pos}</span><span class="n">${isF(t,k)?'★ ':''}${n}<small>${s2}</small></span><b>${pts}</b></div>`;
+const fp=x=>fila(x.pos,'p',x.cod,x.ape,x.equipo,x.pts,x.equipoId),fe=(x,s)=>fila(x.pos,'e',x.id,x.nombre,s||'',x.pts,x.id);
+function posiciones(){
+  const ch=`<div class="ctrl"><button class="chip" data-sub="p" aria-pressed="${sub==='p'}">Pilotos</button><button class="chip" data-sub="e" aria-pressed="${sub==='e'}">Escuderías</button></div>`;
+  return ch+'<div class="tb">'+(sub==='p'?D.pilotos.map(fp):D.constructores.map(x=>fe(x))).join('')+'</div><div class="nota">Tocá una fila para marcar o sacar un favorito.</div>';
+}
+function favoritos(){
+  const mine=[...D.pilotos.filter(x=>isF('p',x.cod)).map(fp),...D.constructores.filter(x=>isF('e',x.id)).map(x=>fe(x,'Escudería'))];
+  const chip=(t,k,n)=>`<button class="chip" data-f="${t}:${k}" aria-pressed="${isF(t,k)}">${n}</button>`;
+  return '<div class="dia">Mis favoritos</div>'+(mine.length?`<div class="tb">${mine.join('')}</div>`:'<div class="vacio">Todavía no elegiste ninguno.</div>')
+   +'<div class="dia">Elegir pilotos</div><div class="ctrl">'+D.pilotos.map(x=>chip('p',x.cod,x.ape)).join('')+'</div><div class="dia">Elegir escuderías</div><div class="ctrl">'+D.constructores.map(x=>chip('e',x.id,x.nombre)).join('')+'</div>';
+}
+function resHtml(c){
+  const r=D.resultados&&D.resultados[c.ronda];if(!r)return'';
+  return'<div class="tb">'+r.map(x=>`<div class="r${isF('p',x.cod)?' fv':''}" style="--c:${tc(x.eq)}"><span class="p">${x.pos}</span><span class="n">${isF('p',x.cod)?'★ ':''}${x.ape}<small>Largó ${x.grid==='0'?'desde boxes':x.grid+'º'} · ${x.tiempo||x.estado}</small></span><b>${x.pts}</b></div>`).join('')+'</div>';
+}
+function favBar(){
+  const bar=(lab,it)=>`<div class="fb"><span class="fl">${lab}</span><span class="fi">${it.length?it.join(''):'<em>Tocá para elegir</em>'}</span></div>`;
+  const c=(n,x,id)=>`<span class="fc" style="--c:${tc(id)}">★ ${n}<b>${x.pos}º · ${x.pts} pts</b></span>`;
+  document.getElementById('favbar').innerHTML=
+    bar('Pilotos',D.pilotos.filter(x=>isF('p',x.cod)).map(x=>c(x.ape,x,x.equipoId)))+
+    bar('Escuderías',D.constructores.filter(x=>isF('e',x.id)).map(x=>c(x.nombre,x,x.id)));
 }
 function render(){
-  if(!D)return;
-  document.getElementById('main').innerHTML=D.carreras&&D.carreras.length?(tab==='inicio'?inicio():cal()):'<div class="vacio">Todavía no hay datos.</div>';
+  if(!D)return;favBar();
+  document.getElementById('main').innerHTML=D.carreras&&D.carreras.length?({inicio,cal,pos:posiciones,fav:favoritos}[tab])():'<div class="vacio">Todavía no hay datos.</div>';
   document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===tab));
 }
+document.getElementById('main').addEventListener('click',e=>{
+  const s=e.target.closest('[data-sub]');if(s){sub=s.dataset.sub;render();return}
+  const f=e.target.closest('[data-f]');if(f){const[t,k]=f.dataset.f.split(':');toggle(t,k);render()}
+});
+document.getElementById('favbar').addEventListener('click',()=>{tab='fav';render()});
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b){tab=b.dataset.t;render()}});
 function cargar(){
   return fetch('data.json?'+Date.now()).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
-    D=d;document.getElementById('act').textContent='Horarios de Argentina · datos del '+new Date(d.actualizado).toLocaleString('es-AR',{timeZone:TZ,day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
-    render();
+    const f=!D;D=d;document.getElementById('act').textContent='Horarios de Argentina · datos del '+new Date(d.actualizado).toLocaleString('es-AR',{timeZone:TZ,day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+    if(f||tab==='inicio')render();
   }).catch(()=>{document.getElementById('act').textContent='No se pudieron cargar los datos'});
 }
-cargar();setInterval(render,30000);setInterval(cargar,600000);
+cargar();setInterval(()=>{if(tab==='inicio')render()},30000);setInterval(cargar,600000);
 </script>
 </body>
 </html>

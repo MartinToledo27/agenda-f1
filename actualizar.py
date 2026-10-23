@@ -1,4 +1,4 @@
-import json, urllib.request
+import json, time, urllib.request
 from datetime import datetime, timezone
 
 J = "https://api.jolpi.ca/ergast/f1/current"
@@ -48,7 +48,7 @@ def calendario():
 
 def pilotos():
     t = get(J + "/driverStandings.json")["StandingsTable"]["StandingsLists"][0]
-    return [{"pos": int(x["position"]), "cod": x["Driver"]["code"], "nombre": x["Driver"]["givenName"] + " " + x["Driver"]["familyName"],
+    return [{"pos": int(x["position"]), "cod": x["Driver"]["code"], "nombre": x["Driver"]["givenName"] + " " + x["Driver"]["familyName"], "ape": x["Driver"]["familyName"],
              "num": x["Driver"].get("permanentNumber"), "equipo": x["Constructors"][-1]["name"],
              "equipoId": x["Constructors"][-1]["constructorId"], "pts": float(x["points"])} for x in t["DriverStandings"]]
 
@@ -59,18 +59,33 @@ def constructores():
              "pts": float(x["points"])} for x in t["ConstructorStandings"]]
 
 
-def ultimo():
-    r = get(J + "/last/results.json")["RaceTable"]["Races"][0]
-    return {"ronda": int(r["round"]), "nombre": r["raceName"], "resultados": [
-        {"pos": x["positionText"], "cod": x["Driver"]["code"], "equipoId": x["Constructor"]["constructorId"],
-         "grid": x["grid"], "estado": x["status"], "tiempo": (x.get("Time") or {}).get("time", ""), "pts": x["points"]}
-        for x in r["Results"]]}
+def resultados():
+    res = dict(viejo.get("resultados", {}))
+    ahora = datetime.now(timezone.utc)
+    pasadas = [c for c in nuevo.get("carreras", [])
+               if datetime.fromisoformat(c["sesiones"][-1]["t"].replace("Z", "+00:00")) < ahora]
+    for i, c in enumerate(pasadas):
+        r = str(c["ronda"])
+        if r in res and i < len(pasadas) - 1:  # la ultima se vuelve a bajar (penalizaciones)
+            continue
+        try:
+            carr = get(f"{J}/{r}/results.json")["RaceTable"]["Races"]
+        except Exception as ex:
+            print("Fallo resultados", r, ex)
+            continue
+        if carr:
+            res[r] = [{"pos": x["positionText"], "cod": x["Driver"]["code"], "ape": x["Driver"]["familyName"],
+                       "eq": x["Constructor"]["constructorId"], "grid": x["grid"], "estado": x["status"],
+                       "tiempo": (x.get("Time") or {}).get("time", ""), "pts": x["points"]} for x in carr[0]["Results"]]
+        time.sleep(0.3)
+    return res
 
 
 intentar("carreras", calendario)
 intentar("pilotos", pilotos)
 intentar("constructores", constructores)
-intentar("ultimo", ultimo)
+intentar("resultados", resultados)
+nuevo.pop("ultimo", None)
 
 base = {k: v for k, v in viejo.items() if k != "actualizado"}
 cmp = {k: v for k, v in nuevo.items() if k != "actualizado"}
