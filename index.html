@@ -47,13 +47,17 @@ details .r{background:none}.r.fv{box-shadow:inset 0 0 0 2px var(--red)}
 .fc{border-left:4px solid var(--c,#888);padding-left:7px;font-weight:600;font-size:14px}
 .fc b{font-weight:400;color:var(--mute);font-size:12px;margin-left:5px}
 .fi em{color:var(--mute);font-size:13px}
+.fbtn{display:flex;align-items:center;gap:8px;width:100%;margin-top:8px;background:var(--sf);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-weight:700;font-size:15px;font-family:inherit;text-align:left;cursor:pointer}
+.fbtn .fn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mute);font-weight:400;font-size:13px}
+.fpanel{background:var(--sf);border:1px solid var(--line);border-radius:10px;padding:2px 12px 10px;margin-top:6px}
+.fpanel .chip[aria-pressed=true]{background:var(--red);border-color:var(--red);color:#fff}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header><h1>Agenda F1</h1><div class="sub" id="act">Cargando…</div></header>
 <div id="favbar"></div>
-<nav id="tabs"><button data-t="inicio" aria-selected="true">Inicio</button><button data-t="cal" aria-selected="false">Calendario</button><button data-t="pos" aria-selected="false">Posiciones</button><button data-t="fav" aria-selected="false">Favoritos</button></nav>
+<nav id="tabs"><button data-t="inicio" aria-selected="true">Inicio</button><button data-t="cal" aria-selected="false">Calendario</button><button data-t="pos" aria-selected="false">Posiciones</button></nav>
 <main id="main"></main>
 </div>
 <script>
@@ -65,7 +69,7 @@ const fh=d=>d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',hour12
 const fd=d=>cap(d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'numeric',timeZone:TZ}));
 const fc=d=>d.toLocaleDateString('es-AR',{day:'numeric',month:'short',timeZone:TZ}).replace('.','');
 const dayK=d=>d.toLocaleDateString('en-CA',{timeZone:TZ});
-let D=null,tab='inicio',sub='p',F={p:[],e:[]};
+let D=null,tab='inicio',sub='p',panel=false,F={p:[],e:[]};
 try{F=JSON.parse(localStorage.getItem('f1_favs'))||F}catch(e){}
 const TC={mercedes:'#27F4D2',ferrari:'#E8002D',mclaren:'#FF8000',red_bull:'#3671C6',rb:'#6692FF',alpine:'#FF87BC',haas:'#B6BABD',audi:'#F50537',williams:'#64C4FF',aston_martin:'#229971',cadillac:'#AAAAAD'};
 const tc=id=>TC[id]||'#888',isF=(t,k)=>F[t].includes(k);
@@ -97,38 +101,37 @@ function cal(){
     return`<details class="${pas?'pas':''}${prox?' prox':''}"><summary><span>${c.ronda}. ${c.nombre.replace(' Grand Prix','')}</span><span>${fc(s[s.length-1].a)}</span></summary>${pas&&D.resultados&&D.resultados[c.ronda]?resHtml(c):sesHtml(c)}</details>`}).join('');
 }
 const fila=(pos,t,k,n,s2,pts,eq)=>`<div class="r${isF(t,k)?' fv':''}" data-f="${t}:${k}" style="--c:${tc(eq)}"><span class="p">${pos}</span><span class="n">${isF(t,k)?'★ ':''}${n}<small>${s2}</small></span><b>${pts}</b></div>`;
-const fp=x=>fila(x.pos,'p',x.cod,x.ape,x.equipo,x.pts,x.equipoId),fe=(x,s)=>fila(x.pos,'e',x.id,x.nombre,s||'',x.pts,x.id);
+const fp=x=>fila(x.pos,'p',x.cod,ap(x),x.equipo,x.pts,x.equipoId),fe=(x,s)=>fila(x.pos,'e',x.id,x.nombre,s||'',x.pts,x.id);
 function posiciones(){
   const ch=`<div class="ctrl"><button class="chip" data-sub="p" aria-pressed="${sub==='p'}">Pilotos</button><button class="chip" data-sub="e" aria-pressed="${sub==='e'}">Escuderías</button></div>`;
   return ch+'<div class="tb">'+(sub==='p'?D.pilotos.map(fp):D.constructores.map(x=>fe(x))).join('')+'</div><div class="nota">Tocá una fila para marcar o sacar un favorito.</div>';
-}
-function favoritos(){
-  const mine=[...D.pilotos.filter(x=>isF('p',x.cod)).map(fp),...D.constructores.filter(x=>isF('e',x.id)).map(x=>fe(x,'Escudería'))];
-  const chip=(t,k,n)=>`<button class="chip" data-f="${t}:${k}" aria-pressed="${isF(t,k)}">${n}</button>`;
-  return '<div class="dia">Mis favoritos</div>'+(mine.length?`<div class="tb">${mine.join('')}</div>`:'<div class="vacio">Todavía no elegiste ninguno.</div>')
-   +'<div class="dia">Elegir pilotos</div><div class="ctrl">'+D.pilotos.map(x=>chip('p',x.cod,x.ape)).join('')+'</div><div class="dia">Elegir escuderías</div><div class="ctrl">'+D.constructores.map(x=>chip('e',x.id,x.nombre)).join('')+'</div>';
 }
 function resHtml(c){
   const r=D.resultados&&D.resultados[c.ronda];if(!r)return'';
   return'<div class="tb">'+r.map(x=>`<div class="r${isF('p',x.cod)?' fv':''}" style="--c:${tc(x.eq)}"><span class="p">${x.pos}</span><span class="n">${isF('p',x.cod)?'★ ':''}${x.ape}<small>Largó ${x.grid==='0'?'desde boxes':x.grid+'º'} · ${x.tiempo||x.estado}</small></span><b>${x.pts}</b></div>`).join('')+'</div>';
 }
+const ap=x=>x.ape||x.nombre.split(' ').slice(-1)[0];
 function favBar(){
-  const bar=(lab,it)=>`<div class="fb"><span class="fl">${lab}</span><span class="fi">${it.length?it.join(''):'<em>Tocá para elegir</em>'}</span></div>`;
-  const c=(n,x,id)=>`<span class="fc" style="--c:${tc(id)}">★ ${n}<b>${x.pos}º · ${x.pts} pts</b></span>`;
-  document.getElementById('favbar').innerHTML=
-    bar('Pilotos',D.pilotos.filter(x=>isF('p',x.cod)).map(x=>c(x.ape,x,x.equipoId)))+
-    bar('Escuderías',D.constructores.filter(x=>isF('e',x.id)).map(x=>c(x.nombre,x,x.id)));
+  const ps=D.pilotos.filter(x=>isF('p',x.cod)),es=D.constructores.filter(x=>isF('e',x.id));
+  const names=[...ps.map(x=>ap(x)),...es.map(x=>x.nombre)].join(' · ');
+  const chip=(t,k,l)=>`<button class="chip" data-f="${t}:${k}" aria-pressed="${isF(t,k)}">${l}</button>`;
+  document.getElementById('favbar').innerHTML=`<button class="fbtn" aria-expanded="${panel}">★ Favoritos (${ps.length+es.length})<span class="fn">${names}</span><span>${panel?'▴':'▾'}</span></button>`+
+   (panel?`<div class="fpanel"><div class="dia">Pilotos</div><div class="ctrl">${D.pilotos.map(x=>chip('p',x.cod,ap(x))).join('')}</div><div class="dia">Escuderías</div><div class="ctrl">${D.constructores.map(x=>chip('e',x.id,x.nombre)).join('')}</div></div>`:'');
 }
 function render(){
   if(!D)return;favBar();
-  document.getElementById('main').innerHTML=D.carreras&&D.carreras.length?({inicio,cal,pos:posiciones,fav:favoritos}[tab])():'<div class="vacio">Todavía no hay datos.</div>';
+  document.getElementById('main').innerHTML=D.carreras&&D.carreras.length?({inicio,cal,pos:posiciones}[tab])():'<div class="vacio">Todavía no hay datos.</div>';
   document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===tab));
 }
 document.getElementById('main').addEventListener('click',e=>{
   const s=e.target.closest('[data-sub]');if(s){sub=s.dataset.sub;render();return}
   const f=e.target.closest('[data-f]');if(f){const[t,k]=f.dataset.f.split(':');toggle(t,k);render()}
 });
-document.getElementById('favbar').addEventListener('click',()=>{tab='fav';render()});
+document.getElementById('favbar').addEventListener('click',e=>{
+  const f=e.target.closest('[data-f]');
+  if(f){const[t,k]=f.dataset.f.split(':');toggle(t,k);render();return}
+  if(e.target.closest('.fbtn')){panel=!panel;render()}
+});
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b){tab=b.dataset.t;render()}});
 function cargar(){
   return fetch('data.json?'+Date.now()).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
