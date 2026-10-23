@@ -67,6 +67,7 @@ details .r{background:none}.r.fv{position:relative;overflow:hidden}.r>span,.r>b{
 .fbtn .fn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mute);font-weight:400;font-size:13px}
 .fpanel{background:var(--sf);border:1px solid var(--line);border-radius:10px;padding:2px 12px 10px;margin-top:6px}
 .fpanel .chip[aria-pressed=true]{background:var(--red);border-color:var(--red);color:#fff}
+details.vivo{border-left:5px solid var(--red);margin:0 0 10px}
 </style>
 </head>
 <body>
@@ -85,32 +86,33 @@ const fh=d=>d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',hour12
 const fd=d=>cap(d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'numeric',timeZone:TZ}));
 const fc=d=>d.toLocaleDateString('es-AR',{day:'numeric',month:'short',timeZone:TZ}).replace('.','');
 const dayK=d=>d.toLocaleDateString('en-CA',{timeZone:TZ});
-let D=null,tab='inicio',sub='p',panel=false,F={p:[],e:[]};
+let D=null,LV={},LS='',VO,tab='inicio',sub='p',panel=false,F={p:[],e:[]};
 try{F=JSON.parse(localStorage.getItem('f1_favs'))||F}catch(e){}
 const TC={mercedes:['#27F4D2','#6C6C6C'],ferrari:['#E8002D','#FFEB00'],mclaren:['#FF8000','#47C7FC'],red_bull:['#3671C6','#E10A3C'],rb:['#6692FF','#E8E8E8'],alpine:['#FF87BC','#0093CC'],haas:['#B6BABD','#E6002B'],audi:['#F50537','#C9C9C9'],williams:['#64C4FF','#00339A'],aston_martin:['#229971','#CEDC00'],cadillac:['#AAAAAD','#1D3FA8']};
 const col=id=>TC[id]||['#888','#ccc'],tc=id=>col(id)[0],fx=id=>{const k=col(id);return`<i class="fx"><b style="--c1:${k[0]};--c2:${k[1]}"></b></i>`};
 const isF=(t,k)=>F[t].includes(k);
 const toggle=(t,k)=>{F[t]=isF(t,k)?F[t].filter(x=>x!==k):[...F[t],k];try{localStorage.setItem('f1_favs',JSON.stringify(F))}catch(e){}};
-const ses=c=>c.sesiones.map(s=>({...s,a:new Date(s.t),b:new Date(+new Date(s.t)+DUR[s.k]*6e4)}));
+const lv=a=>{const k=Object.keys(LV).find(k=>Math.abs(k-a)<=6e5);return k&&LV[k]};
+const ses=c=>c.sesiones.map(s=>{const a=new Date(s.t);return{...s,a,b:new Date(+a+DUR[s.k]*6e4),v:lv(a)}});
 const fin=c=>{const s=ses(c);return s[s.length-1].b};
 function sesHtml(c){
   const now=new Date();let last='';
   return ses(c).map(s=>{
     const k=dayK(s.a),h=k!==last?`<div class="dia">${fd(s.a)}</div>`:'';last=k;
-    const ya=now>=s.a&&now<s.b,pas=now>=s.b;
+    const v=s.v,ya=v?v.st==='in':now>=s.a&&now<s.b,pas=v?v.st==='post':now>=s.b;
     return h+`<div class="s${pas?' pas':''}${ya?' ya':''}${s.k==='R'?' carrera':''}"><div class="hora">${fh(s.a)}</div><div><div class="nom">${NOM[s.k]}${ya?'<span class="pill">EN CURSO</span>':''}</div>${s.d?`<div class="dis">Disney+ ${s.d[0]} a ${s.d[1]}</div>`:''}</div></div>`;
   }).join('');
 }
 function cuenta(c){
-  const now=new Date(),p=ses(c).find(s=>s.b>now);if(!p)return'';
-  if(now>=p.a)return`<div class="cd"><b>${NOM[p.k]} en curso</b></div>`;
+  const now=new Date(),p=ses(c).find(s=>s.v?s.v.st!=='post':s.b>now);if(!p)return'';
+  if(p.v?p.v.st==='in':now>=p.a)return`<div class="cd"><b>${NOM[p.k]} en curso</b></div>`;
   let m=Math.floor((p.a-now)/6e4);const d=Math.floor(m/1440),h=Math.floor(m%1440/60);m%=60;
   return`<div class="cd"><small>Próxima sesión: ${NOM[p.k]}</small><b>${d?d+' d ':''}${h} h ${m} min</b></div>`;
 }
 function inicio(){
   const now=new Date(),c=D.carreras.find(c=>fin(c)>now);
   if(!c)return'<div class="vacio">La temporada terminó. ¡Hasta la próxima!</div>';
-  return`<section class="gp"><h2>${c.nombre}</h2><div class="lug">Fecha ${c.ronda} · ${c.circuito}, ${c.ciudad}</div>${cuenta(c)}${sesHtml(c)}</section>`;
+  return`<section class="gp"><h2>${c.nombre}</h2><div class="lug">Fecha ${c.ronda} · ${c.circuito}, ${c.ciudad}</div>${vivo(c)}${cuenta(c)}${sesHtml(c)}</section>`;
 }
 function cal(){
   const now=new Date(),nx=D.carreras.find(c=>fin(c)>now);
@@ -135,6 +137,22 @@ function favBar(){
   document.getElementById('favbar').innerHTML=`<button class="fbtn" aria-expanded="${panel}">★ Favoritos (${ps.length+es.length})<span class="fn">${names}</span><span>${panel?'▴':'▾'}</span></button>`+
    (panel?`<div class="fpanel"><div class="dia">Pilotos</div><div class="ctrl">${D.pilotos.map(x=>chip('p',x.cod,ap(x))).join('')}</div><div class="dia">Escuderías</div><div class="ctrl">${D.constructores.map(x=>chip('e',x.id,x.nombre)).join('')}</div></div>`:'');
 }
+function vivo(c){
+  const S=ses(c).filter(s=>s.v&&s.v.ord.length&&s.v.st!=='pre');if(!S.length)return'';
+  const en=S.find(s=>s.v.st==='in'),s=en||S[S.length-1];
+  const tit=en?NOM[s.k]:(s.k==='Q'?'Parrilla de largada':s.k==='R'?'Resultado final':'Clasificación')+' · '+NOM[s.k];
+  const rows=s.v.ord.map((n,i)=>{const p=D.pilotos.find(p=>n.includes(ap(p)));
+    return p?fila(i+1,'p',p.cod,ap(p),p.equipo,'',p.equipoId):`<div class="r" style="--c:#888"><span class="p">${i+1}</span><span class="n">${n}</span><b></b></div>`}).join('');
+  const ab=VO===undefined?!!(en||s.k==='Q'||s.k==='R'):VO;
+  return`<details class="vivo"${ab?' open':''}><summary><span>${en?'<span class="pill" style="margin:0 6px 0 0">EN VIVO</span>':''}${tit}</span><span>${s.v.ord.length} pilotos</span></summary><div class="tb">${rows}</div></details>`;
+}
+function live(){
+  return fetch('https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard').then(r=>r.json()).then(j=>{
+    const o={};(j.events||[]).forEach(e=>(e.competitions||[]).forEach(c=>{
+      o[+new Date(c.startDate||c.date)]={st:c.status.type.state,ord:(c.competitors||[]).slice().sort((a,b)=>a.order-b.order).map(x=>x.athlete.fullName)}}));
+    const s=JSON.stringify(o);if(s!==LS){LS=s;LV=o;if(D&&tab==='inicio')render()}
+  }).catch(()=>{});
+}
 function render(){
   if(!D)return;favBar();
   document.getElementById('main').innerHTML=D.carreras&&D.carreras.length?({inicio,cal,pos:posiciones}[tab])():'<div class="vacio">Todavía no hay datos.</div>';
@@ -149,6 +167,7 @@ document.getElementById('favbar').addEventListener('click',e=>{
   if(f){const[t,k]=f.dataset.f.split(':');toggle(t,k);render();return}
   if(e.target.closest('.fbtn')){panel=!panel;render()}
 });
+document.getElementById('main').addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('vivo'))VO=e.target.open},true);
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b){tab=b.dataset.t;render()}});
 function cargar(){
   return fetch('data.json?'+Date.now()).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
@@ -156,7 +175,7 @@ function cargar(){
     if(f||tab==='inicio')render();
   }).catch(()=>{document.getElementById('act').textContent='No se pudieron cargar los datos'});
 }
-cargar();setInterval(()=>{if(tab==='inicio')render()},30000);setInterval(cargar,600000);
+cargar();live();setInterval(live,30000);setInterval(()=>{if(tab==='inicio')render()},30000);setInterval(cargar,600000);
 </script>
 </body>
 </html>
