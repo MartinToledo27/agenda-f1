@@ -12,7 +12,9 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.4 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 .wrap{max-width:560px;margin:0 auto;padding:0 16px 48px}
-header{margin-top:14px;padding:18px 16px;border-radius:14px;background:#111;color:#fff;border-bottom:5px solid var(--red)}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;overflow:hidden;margin-top:14px;padding:18px 16px 24px;border-radius:14px;background:#111;color:#fff}
+header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(90deg,#E10600,#000,#E10600) 0 0/320px 100%;animation:bar 6s linear infinite}
+@keyframes bar{to{background-position:320px 0}}
 h1{margin:0;font:800 32px/1 'Arial Narrow',Arial,sans-serif;letter-spacing:.02em;text-transform:uppercase}
 .sub{color:rgba(255,255,255,.7);font-size:13px;margin-top:4px}
 nav{display:flex;border-bottom:1px solid var(--line);margin-top:12px}
@@ -37,9 +39,23 @@ details .s{border:0;padding:6px 0;margin:0;background:none}
 .chip{border:1px solid var(--line);background:var(--sf);color:var(--ink);border-radius:999px;padding:7px 12px;font-weight:600;font-size:14px;font-family:inherit;cursor:pointer}
 .chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .tb{margin-top:8px}
-.r{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;background:var(--sf);border:1px solid var(--line);border-left:5px solid var(--c,#888);border-radius:8px;padding:8px 12px;margin-bottom:5px}
-details .r{background:none}.r.fv{box-shadow:inset 0 0 0 2px var(--red)}
-.r .p{color:var(--mute);font-weight:700}.r .n{font-weight:600}.r small{display:block;color:var(--mute);font-weight:400;font-size:12px}.r b{font-variant-numeric:tabular-nums}
+.r{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;background:var(--sf);border:1px solid var(--line);border-left:5px solid var(--c,#888);border-radius:8px;padding:5px 10px;margin-bottom:4px}
+details .r{background:none}.r.fv{position:relative;overflow:hidden}.r>span,.r>b{position:relative}
+.fx{position:absolute;inset:0;overflow:hidden;opacity:.42}
+.fx b{position:absolute;inset:-120px;background:repeating-linear-gradient(135deg,var(--c1) 0,var(--c2) 60px,var(--c1) 120px);animation:mv 6s linear infinite}
+@keyframes mv{to{transform:translate(85px,85px)}}
+.anim{flex:none}.o{transform-origin:50px 50px}.o1{animation:s1 12s linear infinite}
+.o2{opacity:0;animation:s2 12s linear infinite}.o3{opacity:0;animation:s3 12s linear infinite}.o4{opacity:0;animation:s4 12s linear infinite}
+@keyframes s1{0%,22%{opacity:1;transform:scale(1)}25%,97%{opacity:0;transform:scale(.4)}100%{opacity:1;transform:scale(1)}}
+@keyframes s2{0%,22%{opacity:0;transform:scale(.4)}25%,47%{opacity:1;transform:scale(1)}50%,100%{opacity:0;transform:scale(.4)}}
+@keyframes s3{0%,47%{opacity:0;transform:scale(.4)}50%,72%{opacity:1;transform:scale(1)}75%,100%{opacity:0;transform:scale(.4)}}
+@keyframes s4{0%,72%{opacity:0;transform:scale(.4)}75%,97%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.4)}}
+.spin{transform-origin:50px 50px;animation:spin 1.2s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.nod{transform-origin:50px 80px;animation:nod 1.4s ease-in-out infinite alternate}@keyframes nod{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+.wob{transform-origin:50px 50px;animation:wob 2s ease-in-out infinite}@keyframes wob{0%,100%{transform:rotate(-35deg)}50%{transform:rotate(35deg)}}
+.wave{transform-origin:26px 38px;animation:wave .7s ease-in-out infinite alternate}@keyframes wave{from{transform:skewY(-7deg) scaleX(1)}to{transform:skewY(7deg) scaleX(.93)}}
+@media (prefers-reduced-motion:reduce){.fx b,header::after,.anim *{animation:none!important}}
+.r .p{color:var(--mute);font-weight:700}.r .n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.r small{display:inline;margin-left:7px;color:var(--mute);font-weight:400;font-size:12px}.r b{font-variant-numeric:tabular-nums}
 .nota{color:var(--mute);font-size:12px;margin-top:8px}
 .fb{display:flex;align-items:center;gap:8px;background:var(--sf);border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin-top:8px;cursor:pointer}
 .fl{flex:none;width:76px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--mute)}
@@ -55,7 +71,7 @@ details .r{background:none}.r.fv{box-shadow:inset 0 0 0 2px var(--red)}
 </head>
 <body>
 <div class="wrap">
-<header><h1>Agenda F1</h1><div class="sub" id="act">Cargando…</div></header>
+<header><div><h1>Agenda F1</h1><div class="sub" id="act">Cargando…</div></div><svg class="anim" viewBox="0 0 100 100" width="76" height="76" aria-hidden="true"><g class="o o1"><g class="spin"><circle cx="50" cy="50" r="40" fill="#1b1b1b"/><circle cx="50" cy="50" r="37" fill="none" stroke="#4a4a4a" stroke-width="6" stroke-dasharray="5 5"/><circle cx="50" cy="50" r="27" fill="none" stroke="#E10600" stroke-width="4"/><circle cx="50" cy="50" r="15" fill="#d9d9d9"/><circle cx="60.0" cy="50.0" r="2" fill="#1b1b1b"/><circle cx="53.1" cy="59.5" r="2" fill="#1b1b1b"/><circle cx="41.9" cy="55.9" r="2" fill="#1b1b1b"/><circle cx="41.9" cy="44.1" r="2" fill="#1b1b1b"/><circle cx="53.1" cy="40.5" r="2" fill="#1b1b1b"/></g></g><g class="o o2"><g class="nod"><path d="M16 64C16 36 32 18 54 18C75 18 88 34 88 56V66C88 70 85 73 81 73H26C20 73 16 69 16 64Z" fill="#E10600"/><path d="M52 38H88V57H58C49 57 46 41 52 38Z" fill="#111" stroke="#fff" stroke-width="2.5"/><path d="M16 50H44" stroke="#fff" stroke-width="5"/><path d="M58 44L80 42" stroke="#fff" stroke-width="2" opacity=".6"/><rect x="30" y="73" width="46" height="6" rx="3" fill="#333"/></g></g><g class="o o3"><g class="wob"><rect x="6" y="30" width="18" height="42" rx="8" fill="#E10600"/><rect x="76" y="30" width="18" height="42" rx="8" fill="#E10600"/><rect x="14" y="34" width="72" height="34" rx="14" fill="#222" stroke="#fff" stroke-width="3"/><rect x="34" y="40" width="32" height="15" rx="3" fill="#111" stroke="#4ade80" stroke-width="2"/><circle cx="40" cy="62" r="3" fill="#E10600"/><circle cx="50" cy="62" r="3" fill="#FFD600"/><circle cx="60" cy="62" r="3" fill="#4ade80"/><circle cx="26" cy="48" r="4" fill="#fff"/><circle cx="74" cy="48" r="4" fill="#fff"/></g></g><g class="o o4"><rect x="22" y="12" width="4" height="78" rx="2" fill="#d9d9d9"/><g class="wave"><rect x="26" y="18" width="60" height="40" fill="#fff"/><rect x="26" y="18" width="10" height="10" fill="#111"/><rect x="46" y="18" width="10" height="10" fill="#111"/><rect x="66" y="18" width="10" height="10" fill="#111"/><rect x="36" y="28" width="10" height="10" fill="#111"/><rect x="56" y="28" width="10" height="10" fill="#111"/><rect x="76" y="28" width="10" height="10" fill="#111"/><rect x="26" y="38" width="10" height="10" fill="#111"/><rect x="46" y="38" width="10" height="10" fill="#111"/><rect x="66" y="38" width="10" height="10" fill="#111"/><rect x="36" y="48" width="10" height="10" fill="#111"/><rect x="56" y="48" width="10" height="10" fill="#111"/><rect x="76" y="48" width="10" height="10" fill="#111"/></g></g></svg></header>
 <div id="favbar"></div>
 <nav id="tabs"><button data-t="inicio" aria-selected="true">Inicio</button><button data-t="cal" aria-selected="false">Calendario</button><button data-t="pos" aria-selected="false">Posiciones</button></nav>
 <main id="main"></main>
@@ -71,8 +87,9 @@ const fc=d=>d.toLocaleDateString('es-AR',{day:'numeric',month:'short',timeZone:T
 const dayK=d=>d.toLocaleDateString('en-CA',{timeZone:TZ});
 let D=null,tab='inicio',sub='p',panel=false,F={p:[],e:[]};
 try{F=JSON.parse(localStorage.getItem('f1_favs'))||F}catch(e){}
-const TC={mercedes:'#27F4D2',ferrari:'#E8002D',mclaren:'#FF8000',red_bull:'#3671C6',rb:'#6692FF',alpine:'#FF87BC',haas:'#B6BABD',audi:'#F50537',williams:'#64C4FF',aston_martin:'#229971',cadillac:'#AAAAAD'};
-const tc=id=>TC[id]||'#888',isF=(t,k)=>F[t].includes(k);
+const TC={mercedes:['#27F4D2','#6C6C6C'],ferrari:['#E8002D','#FFEB00'],mclaren:['#FF8000','#47C7FC'],red_bull:['#3671C6','#E10A3C'],rb:['#6692FF','#E8E8E8'],alpine:['#FF87BC','#0093CC'],haas:['#B6BABD','#E6002B'],audi:['#F50537','#C9C9C9'],williams:['#64C4FF','#00339A'],aston_martin:['#229971','#CEDC00'],cadillac:['#AAAAAD','#1D3FA8']};
+const col=id=>TC[id]||['#888','#ccc'],tc=id=>col(id)[0],fx=id=>{const k=col(id);return`<i class="fx"><b style="--c1:${k[0]};--c2:${k[1]}"></b></i>`};
+const isF=(t,k)=>F[t].includes(k);
 const toggle=(t,k)=>{F[t]=isF(t,k)?F[t].filter(x=>x!==k):[...F[t],k];try{localStorage.setItem('f1_favs',JSON.stringify(F))}catch(e){}};
 const ses=c=>c.sesiones.map(s=>({...s,a:new Date(s.t),b:new Date(+new Date(s.t)+DUR[s.k]*6e4)}));
 const fin=c=>{const s=ses(c);return s[s.length-1].b};
@@ -100,7 +117,7 @@ function cal(){
   return D.carreras.map(c=>{const s=ses(c),pas=fin(c)<=now,prox=nx&&nx.ronda===c.ronda;
     return`<details class="${pas?'pas':''}${prox?' prox':''}"><summary><span>${c.ronda}. ${c.nombre.replace(' Grand Prix','')}</span><span>${fc(s[s.length-1].a)}</span></summary>${pas&&D.resultados&&D.resultados[c.ronda]?resHtml(c):sesHtml(c)}</details>`}).join('');
 }
-const fila=(pos,t,k,n,s2,pts,eq)=>`<div class="r${isF(t,k)?' fv':''}" data-f="${t}:${k}" style="--c:${tc(eq)}"><span class="p">${pos}</span><span class="n">${isF(t,k)?'★ ':''}${n}<small>${s2}</small></span><b>${pts}</b></div>`;
+const fila=(pos,t,k,n,s2,pts,eq)=>`<div class="r${isF(t,k)?' fv':''}" data-f="${t}:${k}" style="--c:${tc(eq)}">${isF(t,k)?fx(eq):''}<span class="p">${pos}</span><span class="n">${n}<small>${s2}</small></span><b>${pts}</b></div>`;
 const fp=x=>fila(x.pos,'p',x.cod,ap(x),x.equipo,x.pts,x.equipoId),fe=(x,s)=>fila(x.pos,'e',x.id,x.nombre,s||'',x.pts,x.id);
 function posiciones(){
   const ch=`<div class="ctrl"><button class="chip" data-sub="p" aria-pressed="${sub==='p'}">Pilotos</button><button class="chip" data-sub="e" aria-pressed="${sub==='e'}">Escuderías</button></div>`;
@@ -108,7 +125,7 @@ function posiciones(){
 }
 function resHtml(c){
   const r=D.resultados&&D.resultados[c.ronda];if(!r)return'';
-  return'<div class="tb">'+r.map(x=>`<div class="r${isF('p',x.cod)?' fv':''}" style="--c:${tc(x.eq)}"><span class="p">${x.pos}</span><span class="n">${isF('p',x.cod)?'★ ':''}${x.ape}<small>Largó ${x.grid==='0'?'desde boxes':x.grid+'º'} · ${x.tiempo||x.estado}</small></span><b>${x.pts}</b></div>`).join('')+'</div>';
+  return'<div class="tb">'+r.map(x=>`<div class="r${isF('p',x.cod)?' fv':''}" style="--c:${tc(x.eq)}">${isF('p',x.cod)?fx(x.eq):''}<span class="p">${x.pos}</span><span class="n">${x.ape}<small>Largó ${x.grid==='0'?'desde boxes':x.grid+'º'} · ${x.tiempo||x.estado}</small></span><b>${x.pts}</b></div>`).join('')+'</div>';
 }
 const ap=x=>x.ape||x.nombre.split(' ').slice(-1)[0];
 function favBar(){
