@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agenda F1</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23E10600'/%3E%3Cpath d='M12 44l12-24h28l-6 12H34l-3 6h10l-6 6z' fill='%23fff'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#111111">
+<style>
+:root{--bg:#F5F4F2;--sf:#fff;--ink:#111;--mute:#5F5F5B;--line:#E0DED8;--red:#E10600;--disney:#1B5BD8}
+@media(prefers-color-scheme:dark){:root{--bg:#0D0D0E;--sf:#18181A;--ink:#F4F3F0;--mute:#A5A49E;--line:#2D2D30;--red:#FF3B30;--disney:#6C9BFF}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.4 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px 48px}
+header{margin-top:14px;padding:18px 16px;border-radius:14px;background:#111;color:#fff;border-bottom:5px solid var(--red)}
+h1{margin:0;font:800 32px/1 'Arial Narrow',Arial,sans-serif;letter-spacing:.02em;text-transform:uppercase}
+.sub{color:rgba(255,255,255,.7);font-size:13px;margin-top:4px}
+nav{display:flex;border-bottom:1px solid var(--line);margin-top:12px}
+nav button{flex:1;background:none;border:0;border-bottom:3px solid transparent;color:var(--mute);font:700 16px/1 inherit;padding:12px 4px;cursor:pointer}
+nav button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--red)}
+.gp{margin-top:18px}.gp h2{margin:0;font-size:24px;line-height:1.1}.gp .lug{color:var(--mute);font-size:14px;margin:3px 0 10px}
+.cd{background:var(--sf);border:1px solid var(--line);border-left:5px solid var(--red);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.cd b{font-size:22px;font-variant-numeric:tabular-nums}.cd small{display:block;color:var(--mute)}
+.dia{font-weight:700;color:var(--mute);font-size:13px;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 6px}
+.s{display:grid;grid-template-columns:58px 1fr;gap:10px;align-items:center;background:var(--sf);border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin-bottom:6px}
+.s.pas{opacity:.5}.s.ya{border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red)}.s.carrera{border-left:5px solid var(--red)}
+.hora{font:700 22px/1 'Arial Narrow',Arial,sans-serif;font-variant-numeric:tabular-nums}
+.nom{font-weight:600}.dis{font-size:12px;font-weight:600;color:var(--disney)}
+.pill{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:var(--red);border-radius:5px;padding:2px 6px;margin-left:6px}
+details{background:var(--sf);border:1px solid var(--line);border-radius:8px;margin-top:8px;padding:0 12px}
+details.pas{opacity:.55}details.prox{border-left:5px solid var(--red)}
+summary{cursor:pointer;padding:11px 0;display:flex;justify-content:space-between;gap:10px;font-weight:600}
+summary span:last-child{color:var(--mute);font-weight:400;font-size:14px;white-space:nowrap}
+details .s{border:0;padding:6px 0;margin:0;background:none}
+.vacio{padding:28px 8px;text-align:center;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>Agenda F1</h1><div class="sub" id="act">Cargando…</div></header>
+<nav id="tabs"><button data-t="inicio" aria-selected="true">Inicio</button><button data-t="cal" aria-selected="false">Calendario</button></nav>
+<main id="main"></main>
+</div>
+<script>
+const TZ='America/Argentina/Buenos_Aires';
+const NOM={FP1:'Práctica libre 1',FP2:'Práctica libre 2',FP3:'Práctica libre 3',SQ:'Clasificación sprint',SPR:'Sprint',Q:'Clasificación',R:'Carrera'};
+const DUR={FP1:60,FP2:60,FP3:60,SQ:45,SPR:60,Q:60,R:120};
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const fh=d=>d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ});
+const fd=d=>cap(d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'numeric',timeZone:TZ}));
+const fc=d=>d.toLocaleDateString('es-AR',{day:'numeric',month:'short',timeZone:TZ}).replace('.','');
+const dayK=d=>d.toLocaleDateString('en-CA',{timeZone:TZ});
+let D=null,tab='inicio';
+const ses=c=>c.sesiones.map(s=>({...s,a:new Date(s.t),b:new Date(+new Date(s.t)+DUR[s.k]*6e4)}));
+const fin=c=>{const s=ses(c);return s[s.length-1].b};
+function sesHtml(c){
+  const now=new Date();let last='';
+  return ses(c).map(s=>{
+    const k=dayK(s.a),h=k!==last?`<div class="dia">${fd(s.a)}</div>`:'';last=k;
+    const ya=now>=s.a&&now<s.b,pas=now>=s.b;
+    return h+`<div class="s${pas?' pas':''}${ya?' ya':''}${s.k==='R'?' carrera':''}"><div class="hora">${fh(s.a)}</div><div><div class="nom">${NOM[s.k]}${ya?'<span class="pill">EN CURSO</span>':''}</div>${s.d?`<div class="dis">Disney+ ${s.d[0]} a ${s.d[1]}</div>`:''}</div></div>`;
+  }).join('');
+}
+function cuenta(c){
+  const now=new Date(),p=ses(c).find(s=>s.b>now);if(!p)return'';
+  if(now>=p.a)return`<div class="cd"><b>${NOM[p.k]} en curso</b></div>`;
+  let m=Math.floor((p.a-now)/6e4);const d=Math.floor(m/1440),h=Math.floor(m%1440/60);m%=60;
+  return`<div class="cd"><small>Próxima sesión: ${NOM[p.k]}</small><b>${d?d+' d ':''}${h} h ${m} min</b></div>`;
+}
+function inicio(){
+  const now=new Date(),c=D.carreras.find(c=>fin(c)>now);
+  if(!c)return'<div class="vacio">La temporada terminó. ¡Hasta la próxima!</div>';
+  return`<section class="gp"><h2>${c.nombre}</h2><div class="lug">Fecha ${c.ronda} · ${c.circuito}, ${c.ciudad}</div>${cuenta(c)}${sesHtml(c)}</section>`;
+}
+function cal(){
+  const now=new Date(),nx=D.carreras.find(c=>fin(c)>now);
+  return D.carreras.map(c=>{const s=ses(c),pas=fin(c)<=now,prox=nx&&nx.ronda===c.ronda;
+    return`<details class="${pas?'pas':''}${prox?' prox':''}"><summary><span>${c.ronda}. ${c.nombre.replace(' Grand Prix','')}</span><span>${fc(s[s.length-1].a)}</span></summary>${sesHtml(c)}</details>`}).join('');
+}
+function render(){
+  if(!D)return;
+  document.getElementById('main').innerHTML=D.carreras&&D.carreras.length?(tab==='inicio'?inicio():cal()):'<div class="vacio">Todavía no hay datos.</div>';
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===tab));
+}
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b){tab=b.dataset.t;render()}});
+function cargar(){
+  return fetch('data.json?'+Date.now()).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+    D=d;document.getElementById('act').textContent='Horarios de Argentina · datos del '+new Date(d.actualizado).toLocaleString('es-AR',{timeZone:TZ,day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+    render();
+  }).catch(()=>{document.getElementById('act').textContent='No se pudieron cargar los datos'});
+}
+cargar();setInterval(render,30000);setInterval(cargar,600000);
+</script>
+</body>
+</html>
